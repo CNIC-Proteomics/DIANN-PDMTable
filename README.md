@@ -19,9 +19,6 @@ The _PDMTableMaker_DIA.py_ script does all the work, but it is advisable to revi
 
 **Execution**:
 > ⚠️ _Adapt the paths to the script and the files to match your case!_
-```
-python PDMTableMaker_DIA.py -i DIA-NN_report.tsv -f organism_fasta.fasta -c params_PDMTableMaker_DIA.ini
-```
 
 <pre style="white-space: pre-wrap;">
  python PDMTableMaker_DIA.py -i DIA-NN_report.tsv -f organism_fasta.fasta -c params_PDMTableMaker_DIA.ini
