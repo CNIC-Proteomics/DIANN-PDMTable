@@ -3,8 +3,8 @@ __author__ = "Cristina Amparo Devesa Arbiol"
 __credits__ = ["Cristina Amparo Devesa Arbiol", "Jose Rodriguez", "Samuel Lozano-Juarez", "Jesus Vazquez"]
 __license__ = "Creative Commons Attribution-NonCommercial-NoDerivs 4.0 Unported License https://creativecommons.org/licenses/by-nc-nd/4.0/"
 __version__ = "0.1.0"
-__maintainer__ = "Jose Rodriguez"
-__email__ = "cristinaamparo.devesa@cnic.es;jmrodriguezc@cnic.es"
+__maintainer__ = "Samuel Lozano-Juarez"
+__email__ = "samuel.lozano@cnic.es"
 __status__ = "Development"
 
 # Import modules
@@ -738,4 +738,5 @@ if __name__ == '__main__':
     
 
         
+
     main(args.config, args.infile, args.fastafile)
