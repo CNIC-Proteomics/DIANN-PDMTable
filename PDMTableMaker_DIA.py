@@ -3,13 +3,12 @@ __author__ = "Cristina Amparo Devesa Arbiol"
 __credits__ = ["Cristina Amparo Devesa Arbiol", "Jose Rodriguez", "Samuel Lozano-Juarez", "Jesus Vazquez"]
 __license__ = "Creative Commons Attribution-NonCommercial-NoDerivs 4.0 Unported License https://creativecommons.org/licenses/by-nc-nd/4.0/"
 __version__ = "0.1.0"
-__maintainer__ = "Samuel Lozano-Juarez"
-__email__ = "samuel.lozano@cnic.es"
+__maintainer__ = "Jose Rodriguez"
+__email__ = "cristinaamparo.devesa@cnic.es;jmrodriguezc@cnic.es"
 __status__ = "Development"
 
 # Import modules
 import re
-import pandas as pd
 from Bio import SeqIO
 import numpy as np
 import configparser
@@ -38,6 +37,7 @@ def get_fasta_report(file):
 def Obtain_n(MasterProtein, dicc_fasta,clean_seq,m,npos) : 
 
     MasterProtein = MasterProtein.strip(" ")
+    
     final_q_pos = ""
     #The fasta sequence corresponding to this identifier is saved 
     for iden in dicc_fasta:
@@ -45,7 +45,11 @@ def Obtain_n(MasterProtein, dicc_fasta,clean_seq,m,npos) :
             result=str(dicc_fasta[iden].seq.upper()).replace("X","L")
             break
     
+    
+
+    
     pattern=re.compile(clean_seq.replace("L","l").replace("I","[IL]").replace("l","[IL]")) # Problems that may exist with leucine and isoleucine are solved
+    
     dicc_seqs={}
     pos = 0
     
@@ -55,6 +59,8 @@ def Obtain_n(MasterProtein, dicc_fasta,clean_seq,m,npos) :
     listan = []
     while True:
         match = pattern.search(result, pos)
+
+
         if not match:
             break
         s = match.start()
@@ -64,6 +70,7 @@ def Obtain_n(MasterProtein, dicc_fasta,clean_seq,m,npos) :
             pos1 = 0
         else:
             pos1 = s-2
+            
         try:
             p2 = result[e+1]
             pos2 = e+1
@@ -80,8 +87,10 @@ def Obtain_n(MasterProtein, dicc_fasta,clean_seq,m,npos) :
         else: 
             final_q_pos = final_q_pos+";"+str(final_pos+m-1)
             initial_q_pos = final_pos
+            
         
         pos = e #  Move forward in text for the next search
+
 
     for position in listab: 
         listan.append(str(int(position)+npos-1))
@@ -102,9 +111,11 @@ def Obtain_n(MasterProtein, dicc_fasta,clean_seq,m,npos) :
     return initial, final, ns, multiple_n,initial_final
 
 def ListMaker(df,seq,counts,dicc_fasta,MasterProtein):
+    
     """
     ListMaker returns the frequency of the scan, the amino acid in the first position, cleaned sequence and m and l positions.
     """
+
     if seq.find("#")!=-1: 
         npos = 0
         clean_seq = seq[seq.find("#")+1:] # Clean sequence is obtained.
@@ -126,7 +137,7 @@ def ListMaker(df,seq,counts,dicc_fasta,MasterProtein):
         else:
             first_b = b 
             first_n = b 
-                         
+                               
     elif seq.find(":")!=-1:
         npos = 0 
         clean_seq = seq[:seq.find(":")] # Clean sequence is obtained.
@@ -191,6 +202,27 @@ def ListMaker(df,seq,counts,dicc_fasta,MasterProtein):
             first_n = n 
             first_b = b 
             
+    elif seq.find("[") != -1:
+        clean_seq = seq[:seq.find("[")]+seq[seq.find("]")+1:] # Clean sequence is obtained.
+        npos = seq.find("[")
+        aa = seq[seq.find("[")-1] # Aminoacid first position
+        freq=int(counts.loc[seq]) # Frecuency of the scan
+        m = int(seq.find("[")) # Position starting from N-term
+        l = int(len(clean_seq)-m+1) # Position starting from C-term
+        pd = clean_seq+":"+seq[seq.find("[")+1:seq.find("]")] # peptide and DM
+        dqna = seq[seq.find("[")+1:seq.find("]")] 
+        n = Obtain_n(MasterProtein,dicc_fasta,clean_seq,m,npos)[2] # Protein positions
+        b = Obtain_n(MasterProtein,dicc_fasta,clean_seq,m,npos)[0] # Protein positions
+        e = Obtain_n(MasterProtein,dicc_fasta,clean_seq,m,npos)[1]
+        multiple_n = Obtain_n(MasterProtein,dicc_fasta,clean_seq,m,npos)[3]
+        b_e = Obtain_n(MasterProtein,dicc_fasta,clean_seq,m,npos)[4]
+        if multiple_n=="YES":
+            first_n = n.split(";")[0]
+            first_b = b.split(";")[0]
+        else:
+            first_n = n 
+            first_b = b
+            
     else:
         clean_seq = seq # Clean sequence is obtained.
         npos = 0
@@ -211,6 +243,8 @@ def ListMaker(df,seq,counts,dicc_fasta,MasterProtein):
         else:
             first_n = n 
             first_b = b 
+        
+
     return clean_seq,seq,aa,freq,m,l,pd,n,dqna,b,e,first_b,first_n,b_e
 
 def get_d(val):
@@ -269,6 +303,7 @@ def build_pgm(row, seq_column_name = "pdm"):
 # Main functions #
 ##################
 def main(file,infile1,fastafile):
+    
     """
     Reading configuration file
     """
@@ -308,7 +343,8 @@ def main(file,infile1,fastafile):
     dic_q_freq = {}
     dic_p_freq = {}
     for index, row in df.iterrows():
-        if  row[seq_column_name] not in seqlist:
+        if row[seq_column_name] not in seqlist:
+
             seqlist.append(row[seq_column_name])
             p,seq,aa,ScanFreq,m,l,pd,n,dqna,b,e,first_b,first_n,b_e= ListMaker(df,row[seq_column_name],counts,dicc_fasta,row[MasterProtein_column_name])              
             d = get_d(row[seq_column_name])
@@ -331,6 +367,7 @@ def main(file,infile1,fastafile):
             df2.loc[cont,"Missing_Cleavage"] = get_misscleavages(row[seq_column_name])
 
             df2.loc[cont,"ScanFreq"] =  int(ScanFreq)
+
             if row[seq_column_name].find("_")==-1: 
                 qdna = qId+":"+str(dqna)+":"+str(n)+":"+aa
                 df2.loc[cont,"qdna"] = qdna
@@ -352,6 +389,7 @@ def main(file,infile1,fastafile):
                     dic_pd_M[p][d] = ScanFreq,m,l,n,qdna,qna
                 if ScanFreq > dic_pd_M[p][d][0]:
                     dic_pd_M[p][d] = ScanFreq,m,l,n,qdna,qna
+
             # Just one b value 
             if  b.find(";")==-1:
                 if qId not in dic_b_e.keys() : 
@@ -359,6 +397,7 @@ def main(file,infile1,fastafile):
 
                 if p not in dic_b_e[qId].keys() :
                     dic_b_e[qId][p]=int(b),int(e)
+
             # More than one b value 
             if b.find(";")!=-1:  
                 if qId not in dic_b_e_mn.keys(): 
@@ -368,6 +407,7 @@ def main(file,infile1,fastafile):
                     dic_b_e_mn[qId][p]={}
                 if pdm not in dic_b_e_mn[qId][p].keys():
                     dic_b_e_mn[qId][p][pdm]=b_e
+
 
             # Just one n value 
             if n.find(";")==-1:
@@ -380,6 +420,8 @@ def main(file,infile1,fastafile):
                     dic_qna_p[qId][p]=dic_qna_p[qId][p]+str(n)
                 else:
                     dic_qna_p[qId][p]=dic_qna_p[qId][p]+","+str(n)
+
+
             # More than one n value 
             if n.find(";")!=-1:
                 if qId not in  dic_qna_p_mn.keys() and n.find(";")!=-1:
@@ -391,44 +433,56 @@ def main(file,infile1,fastafile):
                 if pdm not in  dic_qna_p_mn[qId][p].keys():
                     dic_qna_p_mn[qId][p][pdm]=n
 
+                
+            
+
             if qId not in  dic_q_freq.keys():
                 dic_q_freq[qId]={}
                 dic_q_freq[qId]=int(ScanFreq)
+
             else:
                 dic_q_freq[qId]=  dic_q_freq[qId]+int(ScanFreq)
 
+
             if p not in  dic_p_freq.keys():
                 dic_p_freq[p]=int(ScanFreq)
+
             else:
                 dic_p_freq[p]=  dic_p_freq[p]+int(ScanFreq)
 
             if qdna not in  dic_qdna_freq.keys():
                 dic_qdna_freq[qdna]=int(ScanFreq)
+
             else:
                 dic_qdna_freq[qdna]=  dic_qdna_freq[qdna]+int(ScanFreq)
-                
             if qna not in  dic_qna_freq.keys():
                 dic_qna_freq[qna]=int(ScanFreq)
+
             else:
                 dic_qna_freq[qna]=  dic_qna_freq[qna]+int(ScanFreq)
+                    
+
 
     dic_qna_p_sort = {}           
     for q in dic_qna_p:
-        dic_qna_p_sort[q]= {}   
+        dic_qna_p_sort[q]= {}
+
+        
         for p in dic_qna_p[q]:
+            
             listqna = dic_qna_p[q][p].split(",")
             listqna = list(map(int, listqna))
             listqna = sorted(listqna)
+
             longitud = len(listqna)
-            
             if longitud ==1: 
                 nb= listqna[0]
                 ne = listqna[0]
             else: 
                 nb = listqna[0]
                 ne = listqna[longitud-1]
-                
             dic_qna_p_sort[q][p]= nb,ne
+
 
     dic_qna_cluster={}
     for q in dic_qna_p_sort:
@@ -444,7 +498,10 @@ def main(file,infile1,fastafile):
 
         number_of_p = 0
         for p in sorted_q_b_e_qna: 
+
             number_of_p = number_of_p+1
+
+                
             if sorted_q_b_e_qna[p][0]<=min_nb:
                 min_nb = sorted_q_b_e_qna[p][0]
                 max_ne = sorted_q_b_e_qna[p][1]
@@ -452,12 +509,16 @@ def main(file,infile1,fastafile):
                 clustere = max_ne
                 p_number = p_number+1
                 lista.append(p)
-            elif sorted_q_b_e_qna[p][0]<=max_ne:            
+            elif sorted_q_b_e_qna[p][0]<=max_ne:
+                
                 p_number = p_number+1
-                lista.append(p)            
+                lista.append(p)
+                
                 if sorted_q_b_e_qna[p][1]>=max_ne: 
                     clustere = sorted_q_b_e_qna[p][1]
-                    max_ne = sorted_q_b_e_qna[p][1]          
+                    max_ne = sorted_q_b_e_qna[p][1]
+
+            
             else: 
                 for element in lista: 
                     dic_qna_cluster[q][element]=str(clusterb)+"_"+str(clustere)
@@ -485,6 +546,7 @@ def main(file,infile1,fastafile):
                 for element in lista: 
                     if clusterb ==1:
                         clusterb="1"
+
                     dic_qna_cluster[q][element]=str(clusterb)+"_"+str(clustere)
 
     dic_cluster={}
@@ -500,7 +562,10 @@ def main(file,infile1,fastafile):
         longitud = len(dic_b_e[q].values())
         number_of_p = 0
         for p in sorted_q_b_e:
-            number_of_p = number_of_p+1             
+
+            number_of_p = number_of_p+1
+
+                
             if sorted_q_b_e[p][0]<=min_b:
                 min_b = sorted_q_b_e[p][0]
                 max_e = sorted_q_b_e[p][1]
@@ -514,7 +579,10 @@ def main(file,infile1,fastafile):
                 
                 if sorted_q_b_e[p][1]>=max_e: 
                     clustere = sorted_q_b_e[p][1]
-                    max_e = sorted_q_b_e[p][1]           
+                    max_e = sorted_q_b_e[p][1]
+
+                    
+            
             else: 
                 for element in lista: 
                     dic_cluster[q][element]=str(clusterb)+"_"+str(clustere)
@@ -544,6 +612,7 @@ def main(file,infile1,fastafile):
                         clusterb="1"
 
                     dic_cluster[q][element]=str(clusterb)+"_"+str(clustere)
+
                 
     dic_qk_freq = {}
     dic_qc_freq = {}
@@ -566,6 +635,7 @@ def main(file,infile1,fastafile):
             if row["n"].find(";")!=-1: 
                 k = dic_qna_p_mn[row["q"]][row["p"]][row["pdm"]]
             else: 
+
                 k = dic_qna_cluster[row["q"]][row["p"]]
 
             df2.loc[cont2,"k"]= k
@@ -600,6 +670,19 @@ def main(file,infile1,fastafile):
                 df2.loc[cont2,"N"]= N
                 df2.loc[cont2,"qdNA"]= qdNA
                 df2.loc[cont2,"qNA"]= qNA
+            elif row["pdm"].find("[") != -1:
+                M = dic_pd_M[row["p"]][row["d"]][1]
+                L = dic_pd_M[row["p"]][row["d"]][2]
+                N = dic_pd_M[row["p"]][row["d"]][3]
+                qdNA = dic_pd_M[row["p"]][row["d"]][4]
+                qNA = dic_pd_M[row["p"]][row["d"]][5]
+                
+                df2.loc[cont2,"M"] = M
+                df2.loc[cont2,"A"]=row["p"][M-1]
+                df2.loc[cont2,"L"]= L
+                df2.loc[cont2,"N"]= N
+                df2.loc[cont2,"qdNA"]= qdNA
+                df2.loc[cont2,"qNA"]= qNA
             else:
                 df2.loc[cont2,"M"] = np.nan
                 df2.loc[cont2,"A"] = "U"
@@ -615,12 +698,14 @@ def main(file,infile1,fastafile):
     cont3 = 0
     for index, row in df2.iterrows():
         try:
+      
             df2.loc[cont3,"qkFreq"]= dic_qk_freq[row["qk"]]
             df2.loc[cont3,"qcFreq"]= dic_qc_freq[row["qc"]]
             cont3 = cont3+1
         except: 
             cont3 = cont3+1
             pass
+
 
     logging.info("Writing output file")
     name = output[:-4]
@@ -639,7 +724,9 @@ def main(file,infile1,fastafile):
     logging.info('end script')
 
 if __name__ == '__main__':
+    
     # multiprocessing.freeze_support()
+
     # parse arguments
     parser = argparse.ArgumentParser(
         description='PDMTableMaker',
@@ -673,6 +760,14 @@ if __name__ == '__main__':
                             handlers=[logging.FileHandler(log_file),
                                       logging.StreamHandler()])
 
+    
+    
+
+    
+    
     #start main function
     logging.info('start script: '+"{0}".format(" ".join([x for x in sys.argv])))
+    
+
+        
     main(args.config, args.infile, args.fastafile)
