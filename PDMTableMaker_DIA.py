@@ -713,11 +713,12 @@ def main(file,infile1,fastafile):
     df2["g"] = df2["d"].apply(lambda x: x if x != "0" else "NM")
     #add pgm column
     df2["pgm"] = df2.apply(build_pgm, axis=1)
-    #create pgmFreq based on the num of replicates containing that precursor
+    #create pgmFreq as the mean of the intensities of the samples for that precursor
     import pandas as pd #because someone thought that calling "pd" a variable was a good idea LOL
+    cols_excluir = ["Proteotypic", "Precursor.Charge"]
+    cols_numericas = df.select_dtypes(include="number").columns.difference(cols_excluir)
     df2["pgmFreq"] = df2["pdm"].apply(
-        lambda x: df.loc[df[seq_column_name] == x].dropna(axis=1, how='all').iloc[0].apply(
-            lambda v: pd.to_numeric(v, errors='coerce')).notna().sum()
+        lambda x: df.loc[df[seq_column_name] == x, cols_numericas].stack().mean()
         if not df.loc[df[seq_column_name] == x].empty else 0
     )
     df2.to_csv(name+Outfile_suffix+"_DIAversion.txt", index=False, sep='\t', encoding='utf-8')
