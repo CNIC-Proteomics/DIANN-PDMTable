@@ -718,8 +718,15 @@ def main(file,infile1,fastafile):
     cols_excluir = ["Proteotypic", "Precursor.Charge"]
     cols_numericas = df.select_dtypes(include="number").columns.difference(cols_excluir)
     df2["pgmFreq"] = df2["pdm"].apply(
-        lambda x: df.loc[df[seq_column_name] == x, cols_numericas].stack().mean()
-        if not df.loc[df[seq_column_name] == x].empty else 0
+        lambda x: (
+            np.log2(
+                df.loc[df[seq_column_name] == x, cols_numericas]
+                  .stack()
+                  .mean()
+            )
+            if df.loc[df[seq_column_name] == x, cols_numericas].stack().mean() > 0
+            else 0
+        )
     )
     df2.to_csv(name+Outfile_suffix+"_DIAversion.txt", index=False, sep='\t', encoding='utf-8')
     logging.info('end script')
