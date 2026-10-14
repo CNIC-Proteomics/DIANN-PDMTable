@@ -36,7 +36,7 @@ def get_fasta_report(file):
 
 def Obtain_n(MasterProtein, dicc_fasta,clean_seq,m,npos) : 
 
-    MasterProtein = MasterProtein.strip(" ")
+    MasterProtein = MasterProtein.strip(" ").split(";")[0]
     
     final_q_pos = ""
     #The fasta sequence corresponding to this identifier is saved 
@@ -47,9 +47,10 @@ def Obtain_n(MasterProtein, dicc_fasta,clean_seq,m,npos) :
     
     
 
-    
+    #regex = re.escape(clean_seq)
+    #pattern=re.compile(regex.replace("L","l").replace("I","[IL]").replace("l","[IL]")) # Problems that may exist with leucine and isoleucine are solved
     pattern=re.compile(clean_seq.replace("L","l").replace("I","[IL]").replace("l","[IL]")) # Problems that may exist with leucine and isoleucine are solved
-    
+
     dicc_seqs={}
     pos = 0
     
@@ -116,51 +117,7 @@ def ListMaker(df,seq,counts,dicc_fasta,MasterProtein):
     ListMaker returns the frequency of the scan, the amino acid in the first position, cleaned sequence and m and l positions.
     """
 
-    if seq.find("#")!=-1: 
-        npos = 0
-        clean_seq = seq[seq.find("#")+1:] # Clean sequence is obtained.
-        aa = "U" # Aminoacid first position
-        freq=int(counts.loc[seq]) # Frecuency of the scan
-        m = 0 # Position starting from N-term
-        l = -1 # Position starting from C-term
-        n = 0 # Protein position
-        pd = clean_seq+":"+seq[seq.find("[")+1:seq.find("]")] # Amino acid positions and DM
-        dqna = seq[seq.find("[")+1:seq.find("]")]
-        b = Obtain_n(MasterProtein,dicc_fasta,clean_seq,m,npos)[0] # Protein positions
-        e = Obtain_n(MasterProtein,dicc_fasta,clean_seq,m,npos)[1]
-        n = b 
-        b_e = Obtain_n(MasterProtein,dicc_fasta,clean_seq,m,npos)[4]
-        multiple_n = Obtain_n(MasterProtein,dicc_fasta,clean_seq,m,npos)[3]
-        if multiple_n=="YES":
-            first_b = b.split(";")[0]
-            first_n = first_b
-        else:
-            first_b = b 
-            first_n = b 
-                               
-    elif seq.find(":")!=-1:
-        npos = 0 
-        clean_seq = seq[:seq.find(":")] # Clean sequence is obtained.
-        aa = "U" # Aminoacid first position
-        freq=int(counts.loc[seq]) # Frecuency of the scan
-        m = -1 # Position starting from N-term
-        l = 0 # Position starting from C-term
-        pd = clean_seq+":"+seq[seq.find(":")+1]  # peptide and DM
-        n = len(clean_seq)+1 # Protein position
-        dqna = seq[seq.find("[")+1:seq.find("]")]
-        b = Obtain_n(MasterProtein,dicc_fasta,clean_seq,m,npos)[0] # Protein positions
-        e = Obtain_n(MasterProtein,dicc_fasta,clean_seq,m,npos)[1]
-        n = b 
-        b_e = Obtain_n(MasterProtein,dicc_fasta,clean_seq,m,npos)[4]
-        multiple_n = Obtain_n(MasterProtein,dicc_fasta,clean_seq,m,npos)[3]
-        if multiple_n=="YES":
-            fisrt_b = b.split(";")[0]
-            first_n = first_b
-        else:
-            first_b = b 
-            first_n = b 
-                               
-    elif seq.find("_") != -1:
+    if seq.find("_") != -1:
         clean_seq = seq[:seq.find("_")]
         npos = 0 
         aa = "U" # Aminoacid first position
@@ -284,19 +241,27 @@ def build_pgm(row, seq_column_name = "pdm"):
    """
    Build the pgm sequence from the modified sequence and group column
    """
-   seq = re.sub(r'[^A-Z]', '', str(row[seq_column_name]))
+   seq_val = str(row[seq_column_name])
    g = row["g"]
+    
+   # Extract the unmodified amino acid sequence
+   if "_" in seq_val:
+       seq = seq_val.split("_", 1)[0]
+   else:
+       seq = re.sub(r"\([^)]*\)|\[[^\]]*\]", "", seq_val)
+   
    pgm = f"{seq};{g}"
+   
    if g != "NM":
        extra = ""
-       seq_val = str(row[seq_column_name])
+   
        if "[" in seq_val:
            extra = str(seq_val.index("["))
        elif "(" in seq_val:
            extra = str(seq_val.index("("))
-       elif "_" in seq_val:
-           extra = ""
+
        pgm += f";{extra}"
+   
    return pgm
 
 ##################
@@ -321,6 +286,19 @@ def main(file,infile1,fastafile):
     dicc_fasta = get_fasta_report(fastafile)
     output = infile1
     df = pd.read_csv(infile1, sep="\t", float_precision='high',low_memory=False)
+        
+    # CHANGE THE POSITION OF ALL THE UniMod:1 AFTER THE FIRST AA
+    columns_to_process = [seq_column_name]
+
+    if "Precursor.Id" in df.columns:
+        columns_to_process.append("Precursor.Id")
+    
+    for col in columns_to_process:
+        df[col] = df[col].str.replace(
+            r"^\(UniMod:1\)(.)",
+            r"\1(UniMod:1)",
+            regex=True
+        )
     
     df_withPGM = df.copy()
     df_withPGM["d"] = df_withPGM[seq_column_name].apply(get_d)
