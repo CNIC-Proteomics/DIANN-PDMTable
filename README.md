@@ -5,7 +5,7 @@ Variaton of the [PDM Table Maker Module](https://github.com/CNIC-Proteomics/PTM-
 The _PDMTableMaker_DIA.py_ script does all the work, but it is advisable to review the _params_PDMTableMaker_DIA.ini_ configuration file to avoid errors. The main parameters to configure are:
 
  * `Sequence_column_name`: name of the column in the input data table that contains the (modified) sequence of the peptides. Typically, in DIA-NN reports, this column corresponds to _Modified.Sequence_.
- * `MasterProtein_column_name`: name of the column that contains the protein identifier. It may be _Protein.Group_ if the DIA-NN report is used directly, but it's advisable to execute [Protein Assigner](https://github.com/CNIC-Proteomics/PTM-compass/blob/main/src/tools/ProteinAssigner.py) module over the DIA-NN report and before this module, therefore each peptidoform is assigned to a single protein.
+ * `MasterProtein_column_name`: name of the column that contains the protein identifier. It may be _Protein.Group_ if the DIA-NN report is used directly (in that case the first protein of the group will be considered as the main protein), but it's advisable to execute [Protein Assigner](https://github.com/CNIC-Proteomics/PTM-compass/blob/main/src/tools/ProteinAssigner.py) module over the DIA-NN report and before this module, therefore each peptidoform is assigned to a single protein.
  * `Outfile_suffix`: suffix to be added to the output PDMTable file.
 
 **Input**:
